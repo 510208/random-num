@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>選號小工具</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="app.js"></script>
+    <!-- 引入 Font Awesome 6.4.0 的 CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- 引入 Bootstrap 5.3.1 的 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* 全螢幕按鈕 */
+        .full-width-btn {
+            width: 100%;
+        }
+
+        .text-right {
+            text-align: right;
+            width: auto;
+        }
+
+        .no-animation {
+            animation: none !important; /* 停止動畫 */
+            background-image: none !important; /* 移除斜線背景 */
+            background-color: #5bde87 !important; /* 設置純色背景（這裡使用了一個藍色作為示例） */
+        }
+
+        .btn {
+            background-color: #007bff;
+            color: #fff;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .btn:active {
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255); /* 半透明的背景 */
+            display: block; /* 初始不可見 */
+            z-index: 9999; /* 設置一個較高的 z-index 值 */
+        }
+
+        #loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            /* 添加轉圈圈動畫的樣式 */
+        }
+    </style>
+</head>
+<body style="background-color: rgb(255, 255, 250);">
+    <div id="loading-screen">
+        <div id="loading-spinner">
+            <!-- 在此添加轉圈圈動畫的HTML，例如使用FontAwesome的spinner -->
+            <i class="fa-solid fa-spinner fa-spin-pulse fa-2xl"></i>
+        </div>
+    </div>
+    <div class="container">
+        <!-- ASCII 藝術標題 -->
+        <div class="text-center mb-4">
+            <pre>
+    ______     _     _   _                 _____      _           _             
+    |  ___ \   | |   | \ | |               /  ___|    | |         | |            
+    | |_/ /_ _| |__ |  \| |_   _ _ __ ___ \ `--.  ___| | ___  ___| |_ ___  _ __ 
+    |  __/ _` | '_ \| . ` | | | |  '_ ` _ \ `--. \/ _ \ |/ _ \/ __| __/ _ \| '__|
+    | | | (_| | |_) | |\  | |_| | | | | | /\__/ /  __/ |  __/ (__| || (_) | |   
+    \_|  \__, |_.__/\_| \_/\__,_|_| |_| |_\____/ \___|_|\___|\___|\__\___/|_|   
+        __/ |                                                                 
+        |___/                                                                  
+            </pre>
+        </div>
+
+        <!-- 選號表單 -->
+        <form>
+            <div class="row">
+                <div class="col-md-6 mb-2">
+                    <label for="minimumRange">最小範圍：</label>
+                    <input type="number" id="minimumRange" class="form-control" min="1" value="1">
+                </div>
+
+                <div class="col-md-6 mb-2">
+                    <label for="maximumRange">最大範圍：</label>
+                    <input type="number" id="maximumRange" class="form-control" min="1" value="10">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-2">
+                    <label for="numberQuantity">選取數量：</label>
+                    <input type="number" id="numberQuantity" class="form-control" min="1" value="1">
+                </div>
+                
+                <div class="col-md-6 mb-2">
+                    <label for="numberInterval">號碼間隔：</label>
+                    <input type="number" id="numberInterval" class="form-control" min="1" value="1">
+                </div>
+            </div>
+
+            <div class="mb-2">
+                <label>選單雙數：</label>
+                <div class="form-check form-check-inline">
+                    <input type="radio" id="oddNumbers" class="form-check-input" name="numberType" value="odd">
+                    <label for="oddNumbers" class="form-check-label">單數</label>
+                </div>
+
+                <div class="form-check form-check-inline">
+                    <input type="radio" id="evenNumbers" class="form-check-input" name="numberType" value="even">
+                    <label for="evenNumbers" class="form-check-label">雙數</label>
+                </div>
+
+                <div class="form-check form-check-inline">
+                    <input type="radio" id="allNumbers" class="form-check-input" name="numberType" value="all" checked>
+                    <label for="allNumbers" class="form-check-label">不區分單雙數</label>
+                </div>
+            </div>
+
+            <!-- 原始的按鈕 -->
+            <div class="col-12 mb-2">
+                <button id="generateNumbers" class="btn btn-primary full-width-btn" style="background-color: #165e00;"><i class="fas fa-dice"></i> 抽取號碼</button>
+            </div>
+
+            <div class="progress mt-3">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" id="progressBar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            <br>
+        </form>
+
+        <!-- 抽取結果表格 -->
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>選號項目</th>
+                    <th style="width: 70%;">數字</th>
+                    <th style="width: 120px;">複製</th> <!-- 空的表格欄位，用於放置複製按鈕 -->
+                </tr>
+            </thead>
+            <tbody id="resultTableBody">
+            </tbody>
+        </table>
+
+        <!-- 複製號碼按鈕 -->
+        <div class="text-right">
+            <button id="copyNumbers" class="btn btn-success"><i class="far fa-copy"></i> 複製數字</button>
+        </div>
+    </div>
+
+    <!-- 引入 Bootstrap 5.3.1 的 JavaScript（包括 Popper.js） -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm" crossorigin="anonymous"></script>
+</body>
+</html>
+
+</html>
